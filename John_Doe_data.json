@@ -2,6 +2,7 @@
   "id": 1,
   "name": "John Doe",
   "age": "30",
+  "password": "securepassword123",
   "city": "New York",
   "income": "75000",
   "expenses": "45000",
