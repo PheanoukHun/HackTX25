@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { FormPage } from './pages/FormPage';
 import { PlanPage } from './pages/PlanPage';
-import LoginPage from './pages/loginPage'; // Corrected casing
+import LoginPage from './pages/LoginPage';
 
 export interface FormData {
   // About You
@@ -11,6 +11,7 @@ export interface FormData {
   age: number;
   employment_status: string;
   location: string;
+  password?: string;
   // Lifestyle & Habits
   housing_situation: string;
   dining_habits: string;
@@ -26,8 +27,24 @@ export interface FormData {
   financial_confidence_score: number;
 }
 
+export interface User {
+  name: string;
+  password?: string; // Optional, as it won't be sent to frontend
+  past_conversation_context?: string;
+  // Add other user fields as needed
+}
+
 const App: React.FC = () => {
   const [submittedData, setSubmittedData] = useState<FormData | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Check for logged-in user on app load
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setLoggedInUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const handleFormSubmit = (data: FormData) => {
     setSubmittedData(data);
@@ -45,7 +62,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/formPage" element={<FormPage onSubmit={handleFormSubmit} />} />
-          <Route path="/planPage" element={<PlanPage formData={submittedData} onBack={handleBackToForm} />} />
+          <Route path="/planPage" element={<PlanPage formData={submittedData} onBack={handleBackToForm} loggedInUser={loggedInUser} />} />
           <Route path="/loginPage" element={<LoginPage />} />
         </Routes>
       </div>

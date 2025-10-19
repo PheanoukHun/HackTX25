@@ -15,6 +15,13 @@
     "monthly_expenses": { "type": "number", "minimum": 0 },
     "credit_score_range": { "type": "string", "enum": ["Poor", "Fair", "Good", "Very Good", "Excellent"] }
     
+    "password_hash": { "type": "string" },
+    "housing_situation": { "type": "string" },
+    "dining_habits": { "type": "string" },
+    "monthly_subscriptions": { "type": "number", "minimum": 0 },
+    "financial_goal": { "type": "string" },
+    "financial_confidence_score": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "past_conversation_context": { "type": "string" }
   },
-  "required": ["user_id", "monthly_income", "monthly_expenses", "credit_score_range"]
+  "required": ["user_id", "monthly_income", "monthly_expenses", "credit_score_range", "password_hash"]
 }

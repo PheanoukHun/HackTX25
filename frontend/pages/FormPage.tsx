@@ -6,26 +6,27 @@ import { useNavigate } from 'react-router-dom';
 
 const initialFormData: FormData = {
   // About You
-  name: "Sami Miri",
-  age: 21,
-  employment_status: "Student",
-  location: "Austin, TX",
+  name: "",
+  age: 0,
+  employment_status: "",
+  location: "",
+  password: "",
 
   // Lifestyle & Habits
-  housing_situation: "Renting",
-  dining_habits: "Mix of Both",
-  monthly_subscriptions: 75,
+  housing_situation: "",
+  dining_habits: "",
+  monthly_subscriptions: 0,
 
   // Financial Snapshot (Simplified)
-  monthly_income: 3200,
-  monthly_expenses: 1800,
-  total_debt: 400,
-  credit_score: 700,
-  bank_account_balance: 3700,
+  monthly_income: 0,
+  monthly_expenses: 0,
+  total_debt: 0,
+  credit_score: 0,
+  bank_account_balance: 0,
 
   // Your Goal
-  financial_goal: "Buy first car",
-  financial_confidence_score: 6,
+  financial_goal: "",
+  financial_confidence_score: 0,
 };
 
 interface FormPageProps {
@@ -58,15 +59,16 @@ export const FormPage: React.FC<FormPageProps> = ({ onSubmit }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input label="Full Name" name="name" value={formData.name} onChange={handleChange} />
           <Input label="Age" name="age" type="number" value={formData.age} onChange={handleChange} />
-          <Select label="Employment Status" name="employment_status" value={formData.employment_status} onChange={handleChange} options={['Student', 'Employed', 'Self-Employed', 'Unemployed']} />
+          <Select label="Employment Status" name="employment_status" value={formData.employment_status} onChange={handleChange} options={['', 'Student', 'Employed', 'Self-Employed', 'Unemployed']} />
           <Input label="Location (City, State)" name="location" value={formData.location} onChange={handleChange} />
+          <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} />
         </div>
       </FormSection>
 
       <FormSection title="Lifestyle & Habits" icon={<SparklesIcon />} description="Tell us about your daily life to create a holistic financial picture.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Select label="Housing Situation" name="housing_situation" value={formData.housing_situation} onChange={handleChange} options={['Renting', 'Owning', 'Living with Family', 'Other']} />
-          <Select label="Dining Habits" name="dining_habits" value={formData.dining_habits} onChange={handleChange} options={['Mostly Cook at Home', 'Frequent Dining Out', 'Mix of Both']} />
+          <Select label="Housing Situation" name="housing_situation" value={formData.housing_situation} onChange={handleChange} options={['', 'Renting', 'Owning', 'Living with Family', 'Other']} />
+          <Select label="Dining Habits" name="dining_habits" value={formData.dining_habits} onChange={handleChange} options={['', 'Mostly Cook at Home', 'Frequent Dining Out', 'Mix of Both']} />
           <Input label="Monthly Subscriptions & Memberships" name="monthly_subscriptions" type="number" value={formData.monthly_subscriptions} onChange={handleChange} prefix="$"/>
         </div>
       </FormSection>

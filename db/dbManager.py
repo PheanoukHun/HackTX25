@@ -5,6 +5,17 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Random import get_random_bytes
 import json
 import base64
+import bcrypt
+
+
+def encrypt_password(password):
+    """Hashes a password using bcrypt."""
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    return hashed.decode('utf-8')
+
+def check_password(password, hashed_password):
+    """Checks if a plaintext password matches a hashed password."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
 class UserDatabase:
@@ -147,14 +158,20 @@ class UserDatabase:
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
+                    password_hash TEXT,
                     age TEXT,
                     city TEXT,
-                    password TEXT,
+                    employment TEXT,
+                    housing_situation TEXT,
+                    dining_habits TEXT,
+                    monthly_subscriptions TEXT,
                     income TEXT,
                     expenses TEXT,
                     totalDebt TEXT,
+                    credit_score TEXT,
                     totalAmountInAccount TEXT,
-                    employment TEXT,
+                    financial_goal TEXT,
+                    financial_confidence_score TEXT,
                     netIncome TEXT,
                     context TEXT
                 )
@@ -186,27 +203,33 @@ class UserDatabase:
                 
                 # Extract fields
                 name = user_data.get('name')
-                password = user_data.get('password')
+                password_hash = user_data.get('password_hash') # Expecting hashed password from app.py
                 
                 # Encrypt all sensitive fields
                 encrypted_data = {
                     'age': self._encrypt_field(user_data.get('age')),
-                    'city': self._encrypt_field(user_data.get('city')),
-                    'income': self._encrypt_field(user_data.get('income')),
-                    'expenses': self._encrypt_field(user_data.get('expenses')),
-                    'totalDebt': self._encrypt_field(user_data.get('totalDebt')),
-                    'totalAmountInAccount': self._encrypt_field(user_data.get('totalAmountInAccount')),
-                    'employment': self._encrypt_field(user_data.get('employment')),
-                    'netIncome': self._encrypt_field(user_data.get('netIncome')),
-                    'context': self._encrypt_field(user_data.get('context'))
+                    'city': self._encrypt_field(user_data.get('location')), # Map 'location' from frontend to 'city' in DB
+                    'income': self._encrypt_field(user_data.get('monthly_income')),
+                    'expenses': self._encrypt_field(user_data.get('monthly_expenses')),
+                    'totalDebt': self._encrypt_field(user_data.get('total_debt')),
+                    'totalAmountInAccount': self._encrypt_field(user_data.get('bank_account_balance')),
+                    'employment': self._encrypt_field(user_data.get('employment_status')),
+                    'netIncome': self._encrypt_field(user_data.get('monthly_income') - user_data.get('monthly_expenses') if user_data.get('monthly_income') is not None and user_data.get('monthly_expenses') is not None else None),
+                    'context': self._encrypt_field(user_data.get('past_conversation_context')),
+                    'housing_situation': self._encrypt_field(user_data.get('housing_situation')),
+                    'dining_habits': self._encrypt_field(user_data.get('dining_habits')),
+                    'monthly_subscriptions': self._encrypt_field(user_data.get('monthly_subscriptions')),
+                    'credit_score': self._encrypt_field(user_data.get('credit_score')),
+                    'financial_goal': self._encrypt_field(user_data.get('financial_goal')),
+                    'financial_confidence_score': self._encrypt_field(user_data.get('financial_confidence_score'))
                 }
                 
                 # Insert into database
                 cursor.execute('''
-                    INSERT INTO users (name, password, age, city, income, expenses,
+                    INSERT INTO users (name, password_hash, age, city, income, expenses,
                                      totalDebt, totalAmountInAccount, employment, netIncome, context)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (name, password, encrypted_data['age'], encrypted_data['city'],
+                ''', (name, password_hash, encrypted_data['age'], encrypted_data['city'],
                       encrypted_data['income'], encrypted_data['expenses'], encrypted_data['totalDebt'],
                       encrypted_data['totalAmountInAccount'], encrypted_data['employment'],
                       encrypted_data['netIncome'], encrypted_data['context']))
@@ -247,20 +270,30 @@ class UserDatabase:
                 # Encrypt each field that's being updated
                 field_map = {
                     'age': 'age',
-                    'city': 'city',
-                    'income': 'income',
-                    'expenses': 'expenses',
-                    'totalDebt': 'totalDebt',
-                    'totalAmountInAccount': 'totalAmountInAccount',
-                    'employment': 'employment',
-                    'netIncome': 'netIncome',
-                    'context': 'context'
+                    'location': 'city', # Map 'location' from frontend to 'city' in DB
+                    'monthly_income': 'income',
+                    'monthly_expenses': 'expenses',
+                    'total_debt': 'totalDebt',
+                    'bank_account_balance': 'totalAmountInAccount',
+                    'employment_status': 'employment',
+                    'past_conversation_context': 'context',
+                    'housing_situation': 'housing_situation',
+                    'dining_habits': 'dining_habits',
+                    'monthly_subscriptions': 'monthly_subscriptions',
+                    'credit_score': 'credit_score',
+                    'financial_goal': 'financial_goal',
+                    'financial_confidence_score': 'financial_confidence_score'
                 }
                 
                 for field, column in field_map.items():
                     if field in updated_data:
                         update_fields.append(f"{column} = ?")
                         update_values.append(self._encrypt_field(updated_data[field]))
+                
+                # Handle password hash separately
+                if 'password_hash' in updated_data:
+                    update_fields.append("password_hash = ?")
+                    update_values.append(updated_data['password_hash']) # Already hashed
                 
                 if not update_fields:
                     print("No valid fields to update")
@@ -295,8 +328,10 @@ class UserDatabase:
             with self as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT id, name, password, age, city, income, expenses,
-                           totalDebt, totalAmountInAccount, employment, netIncome, context
+                    SELECT id, name, password_hash, age, city, income, expenses,
+                           totalDebt, totalAmountInAccount, employment, netIncome, context,
+                           housing_situation, dining_habits, monthly_subscriptions, credit_score,
+                           financial_goal, financial_confidence_score
                     FROM users WHERE name = ?
                 ''', (name,))
                 row = cursor.fetchone()
@@ -309,16 +344,22 @@ class UserDatabase:
                 user = {
                     'id': row[0],
                     'name': row[1],
-                    'password': row[2],
+                    'password_hash': row[2],
                     'age': self._decrypt_field(row[3]),
-                    'city': self._decrypt_field(row[4]),
-                    'income': self._decrypt_field(row[5]),
-                    'expenses': self._decrypt_field(row[6]),
-                    'totalDebt': self._decrypt_field(row[7]),
-                    'totalAmountInAccount': self._decrypt_field(row[8]),
-                    'employment': self._decrypt_field(row[9]),
+                    'location': self._decrypt_field(row[4]), # Map 'city' from DB to 'location' for frontend
+                    'monthly_income': self._decrypt_field(row[5]),
+                    'monthly_expenses': self._decrypt_field(row[6]),
+                    'total_debt': self._decrypt_field(row[7]),
+                    'bank_account_balance': self._decrypt_field(row[8]),
+                    'employment_status': self._decrypt_field(row[9]),
                     'netIncome': self._decrypt_field(row[10]),
-                    'context': self._decrypt_field(row[11])
+                    'past_conversation_context': self._decrypt_field(row[11]),
+                    'housing_situation': self._decrypt_field(row[12]),
+                    'dining_habits': self._decrypt_field(row[13]),
+                    'monthly_subscriptions': self._decrypt_field(row[14]),
+                    'credit_score': self._decrypt_field(row[15]),
+                    'financial_goal': self._decrypt_field(row[16]),
+                    'financial_confidence_score': self._decrypt_field(row[17])
                 }
                 
                 print(f"User '{name}' retrieved and decrypted")

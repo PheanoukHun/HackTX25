@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Chat } from '@google/genai';
 import { marked } from 'marked';
-import type { FormData } from '../App';
+import type { FormData, User } from '../App';
 import { ChatMessage } from '../components/ChatMessage';
 import SendTranscriptOnUnmount from '../components/SendTranscriptOnUnmount'; // Import the component
 
 interface PlanPageProps {
-  formData: FormData;
+  formData: FormData | null; // formData can be null if user logs in directly
   onBack: () => void;
+  loggedInUser: User | null;
 }
 
 interface Message {
@@ -15,7 +16,7 @@ interface Message {
   text: string;
 }
 
-export const PlanPage: React.FC<PlanPageProps> = ({ formData, onBack }) => {
+export const PlanPage: React.FC<PlanPageProps> = ({ formData, onBack, loggedInUser }) => {
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -37,7 +38,33 @@ export const PlanPage: React.FC<PlanPageProps> = ({ formData, onBack }) => {
         });
         setChat(newChat);
 
-        const initialPrompt = `
+        let userContext = '';
+        let initialPrompt = '';
+
+        if (loggedInUser && loggedInUser.past_conversation_context) {
+          userContext = loggedInUser.past_conversation_context;
+          initialPrompt = `
+You are OptiLife, an expert financial advisor AI.
+
+OVERALL STYLE GUIDE (Follow for ALL responses):
+
+Persona: Act like a real human advisor, not a robot. Your tone should be encouraging, empathetic, and professional. If discussing cars, be a helpful expert from Toyota and Capital One. If discussing general finance, be a supportive advisor from Capital One.
+
+Brevity: Keep all your responses concise and to the point.
+
+Action Plan Structure: Present your advice as a simple, numbered list. IMPORTANT: Do NOT use the word 'Step' in your responses (e.g., do not write "Step 1"). Just use the numbers to guide the user through the plan naturally.
+
+Readability: For easier reading, use double line breaks (an empty line) between paragraphs and distinct points to create more visual space.
+
+---
+
+Welcome back, ${loggedInUser.name}! Here's a summary of our past conversation:
+${userContext}
+
+Based on our previous discussion, what would you like to focus on today?
+          `;
+        } else if (formData) {
+          initialPrompt = `
 You are OptiLife, an expert financial advisor AI.
 
 OVERALL STYLE GUIDE (Follow for ALL responses):
@@ -115,7 +142,14 @@ Bank Balance: $${formData.bank_account_balance}
 Credit Score: ${formData.credit_score}
 
 Primary Goal: "${formData.financial_goal}"
-        `;
+          `;
+        } else {
+          // Fallback if neither formData nor loggedInUser is available
+          initialPrompt = `
+You are OptiLife, an expert financial advisor AI.
+Please provide your financial information or log in to get a personalized plan.
+          `;
+        }
 
         setMessages([]);
         setIsLoading(true);
@@ -139,7 +173,7 @@ Primary Goal: "${formData.financial_goal}"
     };
 
     initChat();
-  }, [formData]);
+  }, [formData, loggedInUser]); // Add loggedInUser to dependency array
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,11 +232,6 @@ Primary Goal: "${formData.financial_goal}"
             Send
           </button>
         </form>
-      </div>
-      <div className="text-center mt-4">
-        <button onClick={onBack} className="text-sm text-slate-400 hover:text-white transition-colors">
-          &larr; Back to form
-        </button>
       </div>
       <SendTranscriptOnUnmount messages={messages} formData={formData} /> {/* Integrate the component here */}
     </div>

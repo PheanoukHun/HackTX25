@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Header: React.FC = () => {
-  const logoSrc = "../React-icon.png";
+  const logoSrc = "../logo.png";
 
   return (
     <header className="bg-brand-blue shadow-lg">
