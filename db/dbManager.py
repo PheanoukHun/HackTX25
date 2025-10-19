@@ -456,7 +456,7 @@ if __name__ == "__main__":
 
         retrieved_field = db.get_user_field(name)
         if retrieved_field is not None:
-            print(f"SUCCESS: Context for user '{name}': {retrieved_field}")
+            print(retrieved_field)
             sys.exit(0)
         else:
             print(f"FAILED: Could not retrieve context for user '{name}'")
