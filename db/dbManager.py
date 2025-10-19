@@ -84,24 +84,61 @@ class EncryptedDB:
         os.remove(self.db_name)
         
     def _decrypt_file(self):
+        
+        # check to see if encrypted database exists, if not return 
         if not os.path.exists(self.encrypted_name):
             return
         
+        # get key
         key = self._get_key()
+        
+        # load the database
         with open(self.encrypted_name, 'r') as f:
             encrypted_data = json.load(f)
         
+        # get cipher from key
         cipher = AES.new(key, AES.MODE_GCM, 
                         nonce=bytes.fromhex(encrypted_data['nonce']))
+        
+        # decode the encrypted data
         plaintext = cipher.decrypt_and_verify(
             bytes.fromhex(encrypted_data['ciphertext']),
             bytes.fromhex(encrypted_data['tag'])
         )
         
+        # create the file containing the actual data
         with open(self.db_name, 'wb') as f:
             f.write(plaintext)
-
-# Usage with context manager (cleaner!)
+            
+    def import_data(self, json_file_path, db_password, db_name='users.db'):
+        # open json path
+        try:
+            with open(json_file_path, 'r') as f:
+                json_data = json.load(f)
+        
+            db = EncryptedDB(db_name = db_name, password=db_password)
+            
+            with db as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS users(
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        age INTEGER,
+                    )
+                    ''')          
+        # errors
+        except FileNotFoundError:
+            print(f"File '{json_file_path}' not found.")
+        except json.JSONDecodeError:
+            print(f"JSON Error: Invalid JSON format - {e}")
+        except Exception as e:
+            print(f"Error: {e}")
+            
+        
+        
+            
 if __name__ == "__main__":
     db = EncryptedDB(password='my_super_secret_password')
     
