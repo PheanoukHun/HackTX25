@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import type { FormData, User } from '../App';
 import { ChatMessage } from '../components/ChatMessage';
 import SendTranscriptOnUnmount from '../components/SendTranscriptOnUnmount'; // Import the component
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface PlanPageProps {
   formData: FormData | null; // formData can be null if user logs in directly
@@ -22,6 +23,11 @@ export const PlanPage: React.FC<PlanPageProps> = ({ formData, onBack, loggedInUs
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  const handleProfileClick = () => {
+    navigate('/formPage'); // Redirect to FormPage
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -209,6 +215,11 @@ Please provide your financial information or log in to get a personalized plan.
 
   return (
     <div className="bg-brand-blue-light p-4 sm:p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col h-screen">
+      <div className="flex justify-between items-center mb-4"> {/* Added for button placement */}
+        <button onClick={handleProfileClick} className="bg-brand-teal text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-brand-teal-light hover:text-brand-blue transition-all duration-300">
+          Back
+        </button>
+      </div>
       <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-4">
         {messages.map((msg, index) => (
           <ChatMessage key={index} message={msg} />
