@@ -13,9 +13,9 @@
     "location_state": { "type": "string" },
     "monthly_income": { "type": "number", "minimum": 0 },
     "monthly_expenses": { "type": "number", "minimum": 0 },
-    "credit_score_range": { "type": "string", "enum": ["Poor", "Fair", "Good", "Very Good", "Excellent"] }
+    "credit_score_range": { "type": "string", "enum": ["Poor", "Fair", "Good", "Very Good", "Excellent"] },
     
-    "password_hash": { "type": "string" },
+    "password": { "type": "string" },
     "housing_situation": { "type": "string" },
     "dining_habits": { "type": "string" },
     "monthly_subscriptions": { "type": "number", "minimum": 0 },
