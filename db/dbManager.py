@@ -324,6 +324,37 @@ class UserDatabase:
         except Exception as e:
             print(f"Error retrieving user: {e}")
             return None
+        
+    def get_user_field(self, name, field='context'):
+        """
+        Retrieve and decrypt a specific field of user data by name
+        
+        Args:
+            name: Name of the user
+            field: Field to retrieve
+            
+        Returns:
+            Decrypted field value, or None if not found
+        """
+        try:
+            with self as conn:
+                cursor = conn.cursor()
+                cursor.execute(f'''
+                    SELECT {field} FROM users WHERE name = ?
+                ''', (name,))
+                row = cursor.fetchone()
+                
+                if not row:
+                    print(f"User '{name}' not found")
+                    return None
+                
+                decrypted_value = self._decrypt_field(row[0])
+                print(f"Field '{field}' for user '{name}' retrieved and decrypted")
+                return decrypted_value
+                
+        except Exception as e:
+            print(f"Error retrieving field '{field}' for user '{name}': {e}")
+            return None
 
 
 # Interactive Menu
@@ -336,6 +367,7 @@ if __name__ == "__main__":
         print("  1 - Add new user")
         print("  2 - Pull user data")
         print("  3 - Update user")
+        print("  4 - Pull field from specific user")
         sys.exit(1)
     
     json_file = sys.argv[1]
@@ -347,8 +379,8 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Validate action number
-    if action not in ['1', '2', '3']:
-        print(f"Error: Invalid action '{action}'. Must be 1, 2, or 3")
+    if action not in ['1', '2', '3', '4']:
+        print(f"Error: Invalid action '{action}'. Must be 1, 2, 3, or 4")
         sys.exit(1)
     
     # Get password from environment variable
@@ -416,4 +448,16 @@ if __name__ == "__main__":
             sys.exit(0)
         else:
             print(f"FAILED: Could not update user '{name}'")
+            sys.exit(1)
+    
+    elif action == '4':
+        # Pull field from specific user
+        name = user_data.get('name')
+
+        retrieved_field = db.get_user_field(name)
+        if retrieved_field is not None:
+            print(f"SUCCESS: Context for user '{name}': {retrieved_field}")
+            sys.exit(0)
+        else:
+            print(f"FAILED: Could not retrieve context for user '{name}'")
             sys.exit(1)
