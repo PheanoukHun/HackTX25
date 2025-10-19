@@ -1,73 +1,62 @@
-from flask import Flask, jsonify
-import requests
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+import os
 import json
-
-class CustomerProfile():
-    def __init__(self, name, age, employment, city, monthlyIncome, monthlyExpense, totalDebt, creditScore, totalAmountInAccount, financialGoal):
-        self.name = name
-        self.age = age
-        self.employment  = employment
-        self.city = city
-        self.monthlyIncome = monthlyIncome
-        self.monthlyExpense = monthlyExpense
-        self.totalDebt = totalDebt
-        self.creditScore = creditScore
-        self.totalAmountInAccount = totalAmountInAccount
-        self.financialGoal = financialGoal
-    
-    def getCustomerProfile(self):
-        data = {
-            "name": self.name,
-            "age": self.age,
-            "employment": self.employment,
-            "city": self.city,
-            "income": self.monthlyIncome,
-            "expenses": self.monthlyExpense,
-            "shouldPayDebt": self.shouldPayOffDebt(),
-            "totalDebt": self.totalDebt,
-            "totalAmountInAccount": self.totalAmountInAccount,
-            "netIncome" : self.getNetIncome(),
-            "financialGoal": self.financialGoal
-        }
-        
-        # 2. Write dictionary to a JSON file
-        with open("../../db/customerProfile.json", "w") as file:
-            json.dump(data, file, indent=4)
-    
-    def getNetIncome(self):
-        return self.monthlyIncome - self.monthlyExpense
-    
-    def shouldPayOffDebt(self):
-        if (self.monthlyIncome - self.monthlyExpense > 0):
-            return 1
-        else:
-            return 0
+from ..db.dbManager import UserDatabase # Import UserDatabase
 
 app = Flask(__name__)
+CORS(app)
+
+# Initialize database
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'my_super_secret_password')
+db = UserDatabase(db_name='user.db', password=DB_PASSWORD)
+db.create_table() # Ensure the table exists
 
 @app.route('/')
 def hello_world():
     return "Hello, World!"
 
-@app.route('/api/data')
-def get_data():
-    data = {
-        'message': 'This is some data from the API!',
-        'status': 'success'
-    }
-    return jsonify(data)  # Return data as JSON
+@app.route('/api/user', methods=['POST'])
+def create_user():
+    user_data = request.get_json()
+    if not user_data:
+        return jsonify({"error": "Invalid JSON data"}), 400
+    
+    name = user_data.get('name')
+    if not name:
+        return jsonify({"error": "User name is required"}), 400
 
-@app.route('/api/submit', methods=['POST'])
-def submit_data():
-    if request.method == 'POST':
-        data = request.get_json()  # Get JSON data from the request body
-        name = data.get('name')
-        email = data.get('email')
+    if db.save_user(user_data):
+        return jsonify({"message": f"User '{name}' created successfully"}), 201
+    else:
+        return jsonify({"error": f"Failed to create user '{name}'"}), 500
 
-        # Process the data (e.g., save to a database)
-        print(f"Received data: Name={name}, Email={email}")
+@app.route('/api/user/<name>', methods=['GET'])
+def get_user(name):
+    user = db.get_user(name)
+    if user:
+        return jsonify(user), 200
+    else:
+        return jsonify({"error": f"User '{name}' not found"}), 404
 
-        return jsonify({'message': 'Data received successfully!'}), 201  # 201 Created
+@app.route('/api/user/<name>', methods=['PUT'])
+def update_user(name):
+    updated_data = request.get_json()
+    if not updated_data:
+        return jsonify({"error": "Invalid JSON data"}), 400
+    
+    if db.update_user(name, updated_data):
+        return jsonify({"message": f"User '{name}' updated successfully"}), 200
+    else:
+        return jsonify({"error": f"Failed to update user '{name}'"}), 500
+
+@app.route('/api/user/<name>/<field>', methods=['GET'])
+def get_user_field(name, field):
+    field_value = db.get_user_field(name, field)
+    if field_value is not None:
+        return jsonify({field: field_value}), 200
+    else:
+        return jsonify({"error": f"Field '{field}' for user '{name}' not found"}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)  # Run the app in debug mode
+    app.run(debug=True)

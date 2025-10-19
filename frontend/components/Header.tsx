@@ -14,6 +14,9 @@ export const Header: React.FC = () => {
             </h1>
             <p className="text-sm text-brand-gray -mt-1">Spend light, sleep tight.</p>
           </div>
+          <href to="/login">
+              Login
+            </href>
         </div>
       </div>
     </header>

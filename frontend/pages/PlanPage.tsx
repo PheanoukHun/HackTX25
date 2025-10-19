@@ -3,6 +3,7 @@ import { GoogleGenAI, Chat } from '@google/genai';
 import { marked } from 'marked';
 import type { FormData } from '../App';
 import { ChatMessage } from '../components/ChatMessage';
+import SendTranscriptOnUnmount from '../components/SendTranscriptOnUnmount'; // Import the component
 
 interface PlanPageProps {
   formData: FormData;
@@ -30,7 +31,7 @@ export const PlanPage: React.FC<PlanPageProps> = ({ formData, onBack }) => {
   useEffect(() => {
     const initChat = async () => {
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: 'AIzaSyCtC0f5wTHaoFihZBNROok1vjlp9cGCSuw' });
         const newChat = ai.chats.create({
           model: 'gemini-2.5-flash',
         });
@@ -116,11 +117,11 @@ Credit Score: ${formData.credit_score}
 Primary Goal: "${formData.financial_goal}"
         `;
 
-        setMessages([]); 
+        setMessages([]);
         setIsLoading(true);
 
         const responseStream = await newChat.sendMessageStream({ message: initialPrompt });
-        
+
         let currentText = '';
         setMessages([{ role: 'model', text: '...' }]);
 
@@ -128,7 +129,7 @@ Primary Goal: "${formData.financial_goal}"
           currentText += chunk.text;
           setMessages([{ role: 'model', text: currentText }]);
         }
-        
+
       } catch (error) {
         console.error("Chat initialization failed:", error);
         setMessages([{ role: 'model', text: 'Sorry, I encountered an error while generating your plan. Please try again.' }]);
@@ -151,16 +152,16 @@ Primary Goal: "${formData.financial_goal}"
 
     try {
       const responseStream = await chat.sendMessageStream({ message: userInput });
-      
+
       let currentText = '';
       setMessages(prev => [...prev, { role: 'model', text: '...' }]);
 
       for await (const chunk of responseStream) {
         currentText += chunk.text;
         setMessages(prev => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = { role: 'model', text: currentText };
-            return newMessages;
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { role: 'model', text: currentText };
+          return newMessages;
         });
       }
 
@@ -178,8 +179,8 @@ Primary Goal: "${formData.financial_goal}"
         {messages.map((msg, index) => (
           <ChatMessage key={index} message={msg} />
         ))}
-        {isLoading && messages.length > 0 && messages[messages.length-1].role === 'user' && (
-             <ChatMessage message={{role: 'model', text: '...'}} />
+        {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+          <ChatMessage message={{ role: 'model', text: '...' }} />
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -198,11 +199,12 @@ Primary Goal: "${formData.financial_goal}"
           </button>
         </form>
       </div>
-       <div className="text-center mt-4">
-          <button onClick={onBack} className="text-sm text-slate-400 hover:text-white transition-colors">
-              &larr; Back to form
-          </button>
+      <div className="text-center mt-4">
+        <button onClick={onBack} className="text-sm text-slate-400 hover:text-white transition-colors">
+          &larr; Back to form
+        </button>
       </div>
+      <SendTranscriptOnUnmount messages={messages} formData={formData} /> {/* Integrate the component here */}
     </div>
   );
 };
