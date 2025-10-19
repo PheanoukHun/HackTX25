@@ -149,6 +149,7 @@ class UserDatabase:
                     name TEXT NOT NULL,
                     age TEXT,
                     city TEXT,
+                    password TEXT,
                     income TEXT,
                     expenses TEXT,
                     totalDebt TEXT,
@@ -185,6 +186,7 @@ class UserDatabase:
                 
                 # Extract fields
                 name = user_data.get('name')
+                password = user_data.get('password')
                 
                 # Encrypt all sensitive fields
                 encrypted_data = {
@@ -201,10 +203,10 @@ class UserDatabase:
                 
                 # Insert into database
                 cursor.execute('''
-                    INSERT INTO users (name, age, city, income, expenses,
+                    INSERT INTO users (name, password, age, city, income, expenses,
                                      totalDebt, totalAmountInAccount, employment, netIncome, context)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (name, encrypted_data['age'], encrypted_data['city'], 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (name, password, encrypted_data['age'], encrypted_data['city'],
                       encrypted_data['income'], encrypted_data['expenses'], encrypted_data['totalDebt'],
                       encrypted_data['totalAmountInAccount'], encrypted_data['employment'],
                       encrypted_data['netIncome'], encrypted_data['context']))
@@ -293,7 +295,7 @@ class UserDatabase:
             with self as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT id, name, age, city, income, expenses,
+                    SELECT id, name, password, age, city, income, expenses,
                            totalDebt, totalAmountInAccount, employment, netIncome, context
                     FROM users WHERE name = ?
                 ''', (name,))
@@ -307,15 +309,16 @@ class UserDatabase:
                 user = {
                     'id': row[0],
                     'name': row[1],
-                    'age': self._decrypt_field(row[2]),
-                    'city': self._decrypt_field(row[3]),
-                    'income': self._decrypt_field(row[4]),
-                    'expenses': self._decrypt_field(row[5]),
-                    'totalDebt': self._decrypt_field(row[6]),
-                    'totalAmountInAccount': self._decrypt_field(row[7]),
-                    'employment': self._decrypt_field(row[8]),
-                    'netIncome': self._decrypt_field(row[9]),
-                    'context': self._decrypt_field(row[10])
+                    'password': row[2],
+                    'age': self._decrypt_field(row[3]),
+                    'city': self._decrypt_field(row[4]),
+                    'income': self._decrypt_field(row[5]),
+                    'expenses': self._decrypt_field(row[6]),
+                    'totalDebt': self._decrypt_field(row[7]),
+                    'totalAmountInAccount': self._decrypt_field(row[8]),
+                    'employment': self._decrypt_field(row[9]),
+                    'netIncome': self._decrypt_field(row[10]),
+                    'context': self._decrypt_field(row[11])
                 }
                 
                 print(f"User '{name}' retrieved and decrypted")
