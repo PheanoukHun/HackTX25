@@ -28,7 +28,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-brand-blue-light">
       <div className="bg-white shadow-lg p-8 rounded-lg w-96">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
 
@@ -72,7 +72,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
         </form>
 
         <p className="mt-4 text-sm text-gray-500 text-center">
-          Don't have an account? <a href="#" className="text-brand-blue hover:underline">Register</a>
+          Don't have an account? <a href="/formPage" className="text-brand-blue hover:underline">Register</a>
         </p>
       </div>
     </div>

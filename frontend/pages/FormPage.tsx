@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FormSection, Input, Select, RangeSlider } from '../components/FormControls';
 import { CheckCircleIcon, DollarSignIcon, SparklesIcon, UserIcon } from '../components/Icons';
 import type { FormData } from '../App';
+import { useNavigate } from 'react-router-dom';
 
 const initialFormData: FormData = {
   // About You
@@ -33,6 +34,7 @@ interface FormPageProps {
 
 export const FormPage: React.FC<FormPageProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -46,10 +48,11 @@ export const FormPage: React.FC<FormPageProps> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+    navigate('/planPage');
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 bg-brand-blue-light">
       
       <FormSection title="About You" icon={<UserIcon />} description="Let's start with some basic information.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

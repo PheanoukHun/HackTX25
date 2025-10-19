@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Header } from './components/Header';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
 import { FormPage } from './pages/FormPage';
 import { PlanPage } from './pages/PlanPage';
-//import { LoginPage } from './pages/LoginPage';
+import LoginPage from './pages/loginPage'; // Corrected casing
 
 export interface FormData {
   // About You
@@ -26,30 +27,30 @@ export interface FormData {
 }
 
 const App: React.FC = () => {
-  const [page, setPage] = useState<'form' | 'plan'>('form');
   const [submittedData, setSubmittedData] = useState<FormData | null>(null);
 
   const handleFormSubmit = (data: FormData) => {
     setSubmittedData(data);
-    setPage('plan');
+    // In a real application, you would navigate to the plan page here
+    // For now, we'll just set the data
   };
 
   const handleBackToForm = () => {
     setSubmittedData(null);
-    setPage('form');
   };
 
   return (
-    <div className="bg-brand-blue-light min-h-screen text-brand-gray">
-      <Header />
-      <main className="max-w-3xl mx-auto p-4 sm:p-8">
-        {page === 'form' && <FormPage onSubmit={handleFormSubmit} />}
-        {page === 'plan' && submittedData && (
-          <PlanPage formData={submittedData} onBack={handleBackToForm} />
-        )}
-      </main>
-    </div>
+    <Router>
+      <div className="bg-brand-blue-light min-h-screen text-brand-gray">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/formPage" element={<FormPage onSubmit={handleFormSubmit} />} />
+          <Route path="/planPage" element={<PlanPage formData={submittedData} onBack={handleBackToForm} />} />
+          <Route path="/loginPage" element={<LoginPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
