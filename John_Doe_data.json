@@ -1,0 +1,13 @@
+{
+  "id": 1,
+  "name": "John Doe",
+  "age": "30",
+  "city": "New York",
+  "income": "75000",
+  "expenses": "45000",
+  "totalDebt": "15000",
+  "totalAmountInAccount": "10000",
+  "employment": null,
+  "netIncome": "30000",
+  "context": "User context information"
+}
