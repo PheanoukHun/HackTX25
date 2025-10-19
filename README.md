@@ -1,2 +1,2 @@
-# HackTX25
-The Project Where Do Personal Finance Stuff
+# HackTX25 (Finance Lifestyle website)
+OptiLife.tech “Spend light, sleep tight.”
