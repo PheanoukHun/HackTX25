@@ -5,6 +5,7 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Random import get_random_bytes
 import json
 import base64
+import sys
 
 
 class UserDatabase:
@@ -147,15 +148,21 @@ class UserDatabase:
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
-                    age TEXT,
-                    city TEXT,
-                    password TEXT,
-                    income TEXT,
-                    expenses TEXT,
-                    totalDebt TEXT,
-                    totalAmountInAccount TEXT,
-                    employment TEXT,
-                    netIncome TEXT,
+                    password TEXT NOT NULL,
+                    age INTEGER,
+                    location TEXT,
+                    totalAmountInAccount INTEGER,
+                    employment_status TEXT,
+                    housing_situation TEXT,
+                    dining_habits TEXT,
+                    monthly_subscription INTEGER,
+                    monthly_income INTEGER,
+                    monthly_expenses INTEGER,
+                    total_debt INTEGER,
+                    credit_score INTEGER,
+                    bank_account_balance INTEGER,
+                    financial_goal TEXT,
+                    financial_confidence_score INTEGER,
                     context TEXT
                 )
             ''')
@@ -184,32 +191,49 @@ class UserDatabase:
             with self as conn:
                 cursor = conn.cursor()
                 
-                # Extract fields
+                # Extract fields - name and password are NOT encrypted
                 name = user_data.get('name')
                 password = user_data.get('password')
                 
-                # Encrypt all sensitive fields
-                encrypted_data = {
-                    'age': self._encrypt_field(user_data.get('age')),
-                    'city': self._encrypt_field(user_data.get('city')),
-                    'income': self._encrypt_field(user_data.get('income')),
-                    'expenses': self._encrypt_field(user_data.get('expenses')),
-                    'totalDebt': self._encrypt_field(user_data.get('totalDebt')),
-                    'totalAmountInAccount': self._encrypt_field(user_data.get('totalAmountInAccount')),
-                    'employment': self._encrypt_field(user_data.get('employment')),
-                    'netIncome': self._encrypt_field(user_data.get('netIncome')),
+                # Prepare data - integers stay as integers, text fields get encrypted
+                data = {
+                    'age': user_data.get('age'),
+                    'location': self._encrypt_field(user_data.get('location')),
+                    'totalAmountInAccount': user_data.get('totalAmountInAccount'),
+                    'employment_status': self._encrypt_field(user_data.get('employment_status')),
+                    'housing_situation': self._encrypt_field(user_data.get('housing_situation')),
+                    'dining_habits': self._encrypt_field(user_data.get('dining_habits')),
+                    'monthly_subscription': user_data.get('monthly_subscription'),
+                    'monthly_income': user_data.get('monthly_income'),
+                    'monthly_expenses': user_data.get('monthly_expenses'),
+                    'total_debt': user_data.get('total_debt'),
+                    'credit_score': user_data.get('credit_score'),
+                    'bank_account_balance': user_data.get('bank_account_balance'),
+                    'financial_goal': self._encrypt_field(user_data.get('financial_goal')),
+                    'financial_confidence_score': user_data.get('financial_confidence_score'),
                     'context': self._encrypt_field(user_data.get('context'))
                 }
                 
                 # Insert into database
                 cursor.execute('''
-                    INSERT INTO users (name, password, age, city, income, expenses,
-                                     totalDebt, totalAmountInAccount, employment, netIncome, context)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (name, password, encrypted_data['age'], encrypted_data['city'],
-                      encrypted_data['income'], encrypted_data['expenses'], encrypted_data['totalDebt'],
-                      encrypted_data['totalAmountInAccount'], encrypted_data['employment'],
-                      encrypted_data['netIncome'], encrypted_data['context']))
+                    INSERT INTO users (
+                        name, password, age, location, totalAmountInAccount,
+                        employment_status, housing_situation, dining_habits,
+                        monthly_subscription, monthly_income, monthly_expenses,
+                        total_debt, credit_score, bank_account_balance,
+                        financial_goal, financial_confidence_score, context
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    name, password, data['age'], data['location'],
+                    data['totalAmountInAccount'], data['employment_status'],
+                    data['housing_situation'], data['dining_habits'],
+                    data['monthly_subscription'], data['monthly_income'],
+                    data['monthly_expenses'], data['total_debt'],
+                    data['credit_score'], data['bank_account_balance'],
+                    data['financial_goal'], data['financial_confidence_score'],
+                    data['context']
+                ))
                 
                 conn.commit()
                 print(f"User '{name}' saved and encrypted successfully")
@@ -244,23 +268,30 @@ class UserDatabase:
                 update_fields = []
                 update_values = []
                 
-                # Encrypt each field that's being updated
-                field_map = {
-                    'age': 'age',
-                    'city': 'city',
-                    'income': 'income',
-                    'expenses': 'expenses',
-                    'totalDebt': 'totalDebt',
-                    'totalAmountInAccount': 'totalAmountInAccount',
-                    'employment': 'employment',
-                    'netIncome': 'netIncome',
-                    'context': 'context'
+                # Define which fields are integers (not encrypted) vs text (encrypted)
+                integer_fields = {
+                    'age', 'totalAmountInAccount', 'monthly_subscription', 
+                    'monthly_income', 'monthly_expenses', 'total_debt', 
+                    'credit_score', 'bank_account_balance', 'financial_confidence_score'
                 }
                 
-                for field, column in field_map.items():
-                    if field in updated_data:
-                        update_fields.append(f"{column} = ?")
-                        update_values.append(self._encrypt_field(updated_data[field]))
+                text_fields = {
+                    'password', 'location', 'employment_status', 'housing_situation',
+                    'dining_habits', 'financial_goal', 'context'
+                }
+                
+                for field in updated_data:
+                    if field in integer_fields:
+                        update_fields.append(f"{field} = ?")
+                        update_values.append(updated_data[field])
+                    elif field in text_fields:
+                        update_fields.append(f"{field} = ?")
+                        if field == 'password':
+                            # Password is not encrypted
+                            update_values.append(updated_data[field])
+                        else:
+                            # Other text fields are encrypted
+                            update_values.append(self._encrypt_field(updated_data[field]))
                 
                 if not update_fields:
                     print("No valid fields to update")
@@ -295,9 +326,14 @@ class UserDatabase:
             with self as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT id, name, password, age, city, income, expenses,
-                           totalDebt, totalAmountInAccount, employment, netIncome, context
-                    FROM users WHERE name = ?
+                    SELECT 
+                        id, name, password, age, location, totalAmountInAccount,
+                        employment_status, housing_situation, dining_habits,
+                        monthly_subscription, monthly_income, monthly_expenses,
+                        total_debt, credit_score, bank_account_balance,
+                        financial_goal, financial_confidence_score, context
+                    FROM users 
+                    WHERE name = ?
                 ''', (name,))
                 row = cursor.fetchone()
                 
@@ -310,15 +346,21 @@ class UserDatabase:
                     'id': row[0],
                     'name': row[1],
                     'password': row[2],
-                    'age': self._decrypt_field(row[3]),
-                    'city': self._decrypt_field(row[4]),
-                    'income': self._decrypt_field(row[5]),
-                    'expenses': self._decrypt_field(row[6]),
-                    'totalDebt': self._decrypt_field(row[7]),
-                    'totalAmountInAccount': self._decrypt_field(row[8]),
-                    'employment': self._decrypt_field(row[9]),
-                    'netIncome': self._decrypt_field(row[10]),
-                    'context': self._decrypt_field(row[11])
+                    'age': row[3],
+                    'location': self._decrypt_field(row[4]),
+                    'totalAmountInAccount': row[5],
+                    'employment_status': self._decrypt_field(row[6]),
+                    'housing_situation': self._decrypt_field(row[7]),
+                    'dining_habits': self._decrypt_field(row[8]),
+                    'monthly_subscription': row[9],
+                    'monthly_income': row[10],
+                    'monthly_expenses': row[11],
+                    'total_debt': row[12],
+                    'credit_score': row[13],
+                    'bank_account_balance': row[14],
+                    'financial_goal': self._decrypt_field(row[15]),
+                    'financial_confidence_score': row[16],
+                    'context': self._decrypt_field(row[17])
                 }
                 
                 print(f"User '{name}' retrieved and decrypted")
@@ -327,42 +369,22 @@ class UserDatabase:
         except Exception as e:
             print(f"Error retrieving user: {e}")
             return None
-        
-    def get_user_field(self, name, field='context'):
-        """
-        Retrieve and decrypt a specific field of user data by name
-        
-        Args:
-            name: Name of the user
-            field: Field to retrieve
-            
-        Returns:
-            Decrypted field value, or None if not found
-        """
-        try:
-            with self as conn:
-                cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT {field} FROM users WHERE name = ?
-                ''', (name,))
-                row = cursor.fetchone()
-                
-                if not row:
-                    print(f"User '{name}' not found")
-                    return None
-                
-                decrypted_value = self._decrypt_field(row[0])
-                print(f"Field '{field}' for user '{name}' retrieved and decrypted")
-                return decrypted_value
-                
-        except Exception as e:
-            print(f"Error retrieving field '{field}' for user '{name}': {e}")
-            return None
 
 
-# Interactive Menu
-if __name__ == "__main__":
-    import sys
+def main():
+    """
+    Main function to handle CLI arguments
+    
+    Usage:
+        python dbManager.py <json_file> <action_number>
+    
+    Actions:
+        1 - Add new user
+        2 - Pull user data (json_file should contain {"name": "username"})
+        3 - Update user (json_file should contain {"name": "username", ...updated_fields})
+        4 - Get specific field(s) (json_file should contain {"name": "username", "fields": ["income", "city"]})
+    """
+    
     # Check if correct number of arguments provided
     if len(sys.argv) != 3:
         print("Usage: python dbManager.py <json_file> <action_number>")
@@ -370,7 +392,7 @@ if __name__ == "__main__":
         print("  1 - Add new user")
         print("  2 - Pull user data")
         print("  3 - Update user")
-        print("  4 - Pull field from specific user")
+        print("  4 - Get specific field(s)")
         sys.exit(1)
     
     json_file = sys.argv[1]
@@ -408,12 +430,69 @@ if __name__ == "__main__":
     if action == '1':
         # Add new user
         success = db.save_user(user_data)
-        if success:
-            print(f"SUCCESS: User added from {json_file}")
-            sys.exit(0)
-        else:
-            print(f"FAILED: Could not add user")
+        result = {
+            "success": success,
+            "action": "add_user",
+            "message": f"User added from {json_file}" if success else "Could not add user",
+            "name": user_data.get('name')
+        }
+        print(json.dumps(result))
+        sys.exit(0 if success else 1)
+    
+    elif action == '4':
+        # Get specific field(s)
+        name = user_data.get('name')
+        fields = user_data.get('fields', [])
+        
+        if not name:
+            result = {
+                "success": False,
+                "action": "get_fields",
+                "message": "JSON must contain 'name' field",
+                "values": {}
+            }
+            print(json.dumps(result))
             sys.exit(1)
+        
+        if not fields or not isinstance(fields, list):
+            result = {
+                "success": False,
+                "action": "get_fields",
+                "message": "JSON must contain 'fields' array (e.g., ['income', 'city'])",
+                "values": {}
+            }
+            print(json.dumps(result))
+            sys.exit(1)
+        
+        # Get full user data
+        user = db.get_user(name)
+        
+        if not user:
+            result = {
+                "success": False,
+                "action": "get_fields",
+                "message": f"User '{name}' not found",
+                "values": {}
+            }
+            print(json.dumps(result))
+            sys.exit(1)
+        
+        # Extract only requested fields
+        values = {}
+        for field in fields:
+            if field in user:
+                values[field] = user[field]
+            else:
+                values[field] = None
+        
+        result = {
+            "success": True,
+            "action": "get_fields",
+            "message": f"Retrieved {len(values)} field(s) for user '{name}'",
+            "values": values
+        }
+        print(json.dumps(result))
+        sys.exit(0)
     
     elif action == '2':
         # Pull user data
@@ -435,32 +514,39 @@ if __name__ == "__main__":
         # Update user
         name = user_data.get('name')
         if not name:
-            print("Error: JSON must contain 'name' field for updating")
+            result = {
+                "success": False,
+                "action": "update_user",
+                "message": "JSON must contain 'name' field for updating",
+                "name": None
+            }
+            print(json.dumps(result))
             sys.exit(1)
         
         # Remove 'name' from update data as it's used for identification
         update_data = {k: v for k, v in user_data.items() if k != 'name'}
         
         if not update_data:
-            print("Error: No fields to update (only 'name' was provided)")
+            result = {
+                "success": False,
+                "action": "update_user",
+                "message": "No fields to update (only 'name' was provided)",
+                "name": name
+            }
+            print(json.dumps(result))
             sys.exit(1)
         
         success = db.update_user(name, update_data)
-        if success:
-            print(f"SUCCESS: User '{name}' updated")
-            sys.exit(0)
-        else:
-            print(f"FAILED: Could not update user '{name}'")
-            sys.exit(1)
-    
-    elif action == '4':
-        # Pull field from specific user
-        name = user_data.get('name')
+        result = {
+            "success": success,
+            "action": "update_user",
+            "message": f"User '{name}' updated" if success else f"Could not update user '{name}'",
+            "name": name,
+            "updated_fields": list(update_data.keys())
+        }
+        print(json.dumps(result))
+        sys.exit(0 if success else 1)
 
-        retrieved_field = db.get_user_field(name)
-        if retrieved_field is not None:
-            print(retrieved_field)
-            sys.exit(0)
-        else:
-            print(f"FAILED: Could not retrieve context for user '{name}'")
-            sys.exit(1)
+
+if __name__ == "__main__":
+    main()
