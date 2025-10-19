@@ -215,7 +215,7 @@ Please provide your financial information or log in to get a personalized plan.
 
   return (
     <div className="bg-brand-blue-light p-4 sm:p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col h-screen">
-      <div className="flex justify-between items-center mb-4"> {/* Added for button placement */}
+      <div className="flex justify-end items-center mb-4"> {/* Added for button placement */}
         <button onClick={handleProfileClick} className="bg-brand-teal text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-brand-teal-light hover:text-brand-blue transition-all duration-300">
           Back
         </button>
