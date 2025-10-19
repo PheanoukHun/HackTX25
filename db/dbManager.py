@@ -8,6 +8,7 @@ import base64
 import sys
 
 
+
 class UserDatabase:
     """Encrypted SQLite database for storing single user data"""
     
@@ -193,8 +194,9 @@ class UserDatabase:
                 
                 # Extract fields - name and password are NOT encrypted
                 name = user_data.get('name')
-                password = user_data.get('password')
+                password = user_data.get('password') # Expecting hashed password from app.py
                 
+
                 # Prepare data - integers stay as integers, text fields get encrypted
                 data = {
                     'age': user_data.get('age'),
@@ -212,10 +214,12 @@ class UserDatabase:
                     'financial_goal': self._encrypt_field(user_data.get('financial_goal')),
                     'financial_confidence_score': user_data.get('financial_confidence_score'),
                     'context': self._encrypt_field(user_data.get('context'))
+
                 }
                 
                 # Insert into database
                 cursor.execute('''
+
                     INSERT INTO users (
                         name, password, age, location, totalAmountInAccount,
                         employment_status, housing_situation, dining_habits,
@@ -234,6 +238,7 @@ class UserDatabase:
                     data['financial_goal'], data['financial_confidence_score'],
                     data['context']
                 ))
+
                 
                 conn.commit()
                 print(f"User '{name}' saved and encrypted successfully")
@@ -273,6 +278,7 @@ class UserDatabase:
                     'age', 'totalAmountInAccount', 'monthly_subscription', 
                     'monthly_income', 'monthly_expenses', 'total_debt', 
                     'credit_score', 'bank_account_balance', 'financial_confidence_score'
+
                 }
                 
                 text_fields = {
@@ -292,6 +298,11 @@ class UserDatabase:
                         else:
                             # Other text fields are encrypted
                             update_values.append(self._encrypt_field(updated_data[field]))
+                
+                # Handle password hash separately
+                if 'password' in updated_data:
+                    update_fields.append("password = ?")
+                    update_values.append(updated_data['password']) # Already hashed
                 
                 if not update_fields:
                     print("No valid fields to update")
@@ -326,6 +337,7 @@ class UserDatabase:
             with self as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
+
                     SELECT 
                         id, name, password, age, location, totalAmountInAccount,
                         employment_status, housing_situation, dining_habits,
@@ -345,6 +357,7 @@ class UserDatabase:
                 user = {
                     'id': row[0],
                     'name': row[1],
+
                     'password': row[2],
                     'age': row[3],
                     'location': self._decrypt_field(row[4]),
@@ -361,6 +374,7 @@ class UserDatabase:
                     'financial_goal': self._decrypt_field(row[15]),
                     'financial_confidence_score': row[16],
                     'context': self._decrypt_field(row[17])
+
                 }
                 
                 print(f"User '{name}' retrieved and decrypted")

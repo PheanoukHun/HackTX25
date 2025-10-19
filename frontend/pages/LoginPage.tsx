@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginPageProps {
   // You can add props here if needed, e.g., a redirect URL
@@ -8,22 +9,39 @@ const LoginPage: React.FC<LoginPageProps> = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null); // Clear previous errors
 
-    // Simple validation
     if (!username || !password) {
       setError('Please enter both username and password.');
       return;
     }
 
-    // Simulate login (replace with your backend call)
-    if (username === 'user' && password === 'password') {
-      console.log('Login successful!');
-      // window.location.href = '/dashboard'; // Example redirect
-    } else {
-      setError('Invalid username or password.');
+    try {
+      const response = await fetch('http://localhost:5000/api/login', { // Assuming Flask runs on 5000
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Login successful!', data);
+        // Store user data (e.g., in localStorage or context)
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/planPage'); // Redirect to PlanPage
+      } else {
+        setError(data.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Login API call failed:', err);
+      setError('Network error or server is unreachable.');
     }
   };
 

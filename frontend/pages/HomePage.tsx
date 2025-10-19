@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const logoSrc = "../React-icon.png"; // Assuming the logo is in the same relative path as in Header.tsx
+  const logoSrc = "../logo.png"; // Assuming the logo is in the same relative path as in Header.tsx
 
   const handleRegisterClick = () => {
     navigate('/formPage');
