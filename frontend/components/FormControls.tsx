@@ -1,4 +1,5 @@
 import React from 'react';
+import { InformationCircleIcon } from './Icons';
 
 // Form Section Wrapper
 interface FormSectionProps {
@@ -20,14 +21,36 @@ export const FormSection: React.FC<FormSectionProps> = ({ title, icon, descripti
   </section>
 );
 
+// Tooltip Component (Private to this module)
+const Tooltip: React.FC<{ children: React.ReactNode; content: string }> = ({ children, content }) => {
+  return (
+    <div className="relative flex items-center group">
+      {children}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-brand-blue border border-slate-600 rounded-lg shadow-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 invisible group-hover:visible z-10">
+        {content}
+      </div>
+    </div>
+  );
+};
+
 // Generic Input
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   prefix?: string;
+  tooltip?: string;
 }
-export const Input: React.FC<InputProps> = ({ label, name, prefix, ...props }) => (
+export const Input: React.FC<InputProps> = ({ label, name, prefix, tooltip, ...props }) => (
   <div>
-    <label htmlFor={name} className="block text-sm font-medium text-brand-gray mb-1">{label}</label>
+    <div className="flex items-center gap-1.5 mb-1">
+      <label htmlFor={name} className="block text-sm font-medium text-brand-gray">{label}</label>
+      {tooltip && (
+        <Tooltip content={tooltip}>
+          <span className="text-slate-400 hover:text-slate-200 transition-colors cursor-help">
+            <InformationCircleIcon />
+          </span>
+        </Tooltip>
+      )}
+    </div>
     <div className="relative">
        {prefix && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">{prefix}</span>}
       <input
