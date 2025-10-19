@@ -208,7 +208,7 @@ Please provide your financial information or log in to get a personalized plan.
   };
 
   return (
-    <div className="bg-brand-blue-light p-4 sm:p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col h-[calc(100vh-12rem)]">
+    <div className="bg-brand-blue-light p-4 sm:p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col h-screen">
       <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-4">
         {messages.map((msg, index) => (
           <ChatMessage key={index} message={msg} />
