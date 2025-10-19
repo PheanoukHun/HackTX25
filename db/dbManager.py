@@ -7,22 +7,32 @@ import json
 
 class EncryptedDB:
     def __init__(self, db_name='data.db', password='your_password_here'):
+        # database name
         self.db_name = db_name
+        # encrypted database name
         self.encrypted_name = db_name + '.enc'
+        # password
         self.password = password
+        # salt for randomizing data
         self.salt_file = db_name + '.salt'
+        # connection to database
         self.conn = None
     
     def __enter__(self):
         """Context manager entry"""
+        # decrypt file
         self._decrypt_file()
+        # connection to database
         self.conn = sqlite3.connect(self.db_name)
+        # return connection
         return self.conn
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit"""
+        # if we're connected, exit database
         if self.conn:
             self.conn.close()
+        # encrypt data
         self._encrypt_file()
     
     def _get_key(self):
@@ -35,28 +45,44 @@ class EncryptedDB:
                 f.write(salt)
         return PBKDF2(self.password, salt, dkLen=32)
     
+    # encrypts an entry
     def _encrypt_file(self):
+        # Check if database exists, if not return
         if not os.path.exists(self.db_name):
             return
         
+        # Get the encryption key
         key = self._get_key()
+        
+        # Read the entire database file
         with open(self.db_name, 'rb') as f:
-            plaintext = f.read()
+            plaintext = f.read()  # Raw database bytes
         
+        # Create AES cipher with the key
         cipher = AES.new(key, AES.MODE_GCM)
-        ciphertext, tag = cipher.encrypt_and_digest(plaintext)
         
+        # Encrypt the data
+        ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+        # ciphertext = encrypted data (unreadable)
+        # tag = authentication tag (proves data wasn't tampered with)
+        
+        # Package everything needed to decrypt later
         encrypted_data = {
+            # Random value for this encryption
             'nonce': cipher.nonce.hex(),
+            # Authentication tag      
             'tag': tag.hex(),
-            'ciphertext': ciphertext.hex()
+            # The encrypted database                 
+            'ciphertext': ciphertext.hex()     
         }
         
+        # Save encrypted version
         with open(self.encrypted_name, 'w') as f:
             json.dump(encrypted_data, f)
         
+        # Delete the plaintext version for security
         os.remove(self.db_name)
-    
+        
     def _decrypt_file(self):
         if not os.path.exists(self.encrypted_name):
             return
